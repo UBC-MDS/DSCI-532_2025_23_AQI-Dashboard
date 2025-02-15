@@ -6,7 +6,7 @@ Despite air quality data being released over the years, there is a lack of publi
 
 This dashboard provides user-friendly visualizations to help the general public track air quality trends, including AQI and other pollution metrics, from 2015 to 2024. It also includes a heatmap showing comparisons across different cities, enabling users to identify regions with high pollution distribution within a specified date range. Additionally, the dashboard offers an interactive chart displaying the relative rankings of cities—from best to worst pollution levels—within a selected date range.
 
-Overall, this dashboard will help the general public stay informed and raise awareness about air quality trends, identify pollution hotspots, and make safer daily choices by providing easy-to-understand visualizations, real-time alerts, and health recommendations. It empowers users to track changes over time and understand how pollutants impact air quality, thereby promoting healthier living decisions.
+Overall, this dashboard will help the general public stay informed and raise awareness about air quality trends, identify pollution hotspots, and make safer daily choices by providing easy-to-understand visualizations, real time alerts, and health recommendations. It empowers users to track changes over time and understand how pollutants impact air quality, thereby promoting healthier living decisions.
 
 # Description of the data
 
