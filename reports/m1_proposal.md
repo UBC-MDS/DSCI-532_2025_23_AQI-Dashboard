@@ -21,3 +21,11 @@ This dashboard aims to help the Indian general public understand long-term air q
 Raj is a working professional and father of two in Delhi. He has heard some news about smog in his city and is concerned about the impact of air pollution on his family’s health. Using the dashboard, he filters for Delhi and explores AQI trends over the past 10 years. He compares the trend to other cities and examines how pollution levels vary by season. He filters through the different pollutant data on the dashboard and identifies PM2.5 as a major contributor, and notices that winter months consistently have the worst air quality. After analyzing the data, he decides to limit outdoor activities for his children during peak pollution months. He also shares his findings with a local advocacy group pushing for cleaner public transportation and stricter air quality regulations.
 
 # App sketch and description
+
+![alt text](../img/sketch.png)
+
+Our dashboard provides an interactive analysis of air quality trends in India over the past decade. Users can select up to five cities and adjust the time period of interest through dynamic filters. The dashboard features the Air Quality Index (AQI) and key pollutants contributing to air pollution.
+
+To visualize trends effectively, we utilize bar charts and line charts, illustrating variations in AQI and pollutant levels over time. Additionally, two key insight cards highlight critical information, including the percentage increase in AQI and the most influential pollutants correlated with AQI fluctuations.
+
+This interactive tool enables users to explore air quality patterns, identify key contributing factors, and gain actionable insights into pollution trends across different cities in India.
