@@ -46,7 +46,7 @@ app.layout = html.Div([
      Input('date_range', 'start_date'),
      Input('date_range', 'end_date')]
 )
-def create_chart(col, city, start_date, end_date):
+def create_line_chart(col, city, start_date, end_date):
     df_city_filter = df[df["City"].isin(city)]
     df_date_filtered = df_city_filter[
         (df_city_filter["Datetime"] >= start_date) & (df_city_filter["Datetime"] <= end_date)
@@ -64,15 +64,24 @@ def create_chart(col, city, start_date, end_date):
 
     df_line_chart = df_date_filtered.groupby([pd.Grouper(key="Datetime", freq=freq),
                                 "City"]).mean(numeric_only=True).reset_index()
+    df_line_chart_mean = df_line_chart.groupby(pd.Grouper(key="Datetime", freq=freq)).mean(numeric_only=True).reset_index()
 
     return (
-        alt.Chart(df_line_chart).mark_line().encode(
+        (alt.Chart(df_line_chart).mark_line().encode(
             x=alt.X("Datetime:T", title="Date"),
             y=alt.Y(col+":Q", title=col),
             color=alt.Color("City:N"),
             opacity=alt.value(0.5),
             tooltip=["Datetime:T", "AQI:Q"]
-            ).to_dict()
+            ) +
+        alt.Chart(df_line_chart_mean).mark_line().encode(
+            x=alt.X("Datetime:T", title="Date"),
+            y=alt.Y(col+":Q", title=col),
+            color=alt.value("#000000"),
+            #opacity=alt.value(0.5),
+            tooltip=["Datetime:T", "AQI:Q"]
+            )
+        ).to_dict()
     )
 
 
