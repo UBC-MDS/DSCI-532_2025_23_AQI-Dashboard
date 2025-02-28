@@ -55,33 +55,43 @@ def create_line_chart(col, city, start_date, end_date):
     date_length = (pd.to_datetime(end_date) - pd.to_datetime(start_date)).days
     if date_length < 14:
         freq = "D"
-    elif date_length < 200:
+    elif date_length < 400:
         freq = "W"
-    elif date_length < 600:
+    elif date_length < 1200:
         freq = "MS"
     else:
         freq = "QS"
 
-    df_line_chart = df_date_filtered.groupby([pd.Grouper(key="Datetime", freq=freq),
+    df_line_chart = df_date_filtered.groupby([pd.Grouper(key="Datetime",
+                                                         freq=freq),
                                 "City"]).mean(numeric_only=True).reset_index()
-    df_line_chart_mean = df_line_chart.groupby(pd.Grouper(key="Datetime", freq=freq)).mean(numeric_only=True).reset_index()
+    df_line_chart_mean = df_line_chart.groupby(
+        pd.Grouper(key="Datetime", freq=freq)
+        ).mean(numeric_only=True).reset_index()
+    df_line_chart_mean['City'] = "Average"
+
+    if col == "AQI":
+        y_title = "AQI"
+        chart_title = "AQI Concentration Over Time"
+    else:
+        y_title = col + " Concentration"
+        chart_title = col + " Concentration Over Time"
 
     return (
-        (alt.Chart(df_line_chart).mark_line().encode(
+        (
+        alt.Chart(df_line_chart).mark_line().encode(
             x=alt.X("Datetime:T", title="Date"),
-            y=alt.Y(col+":Q", title=col),
-            color=alt.Color("City:N"),
+            y=alt.Y(col+":Q", title=y_title, scale=alt.Scale(zero=False)),
+            color=alt.Color("City:N", title="Legend"),
             opacity=alt.value(0.5),
-            tooltip=["Datetime:T", "AQI:Q"]
+            tooltip=["Datetime:T", "AQI:Q", "City:N"]
             ) +
-        alt.Chart(df_line_chart_mean).mark_line().encode(
+        alt.Chart(df_line_chart_mean).mark_line(color="black").encode(
             x=alt.X("Datetime:T", title="Date"),
-            y=alt.Y(col+":Q", title=col),
-            color=alt.value("#000000"),
-            #opacity=alt.value(0.5),
+            y=alt.Y(col+":Q", title=y_title, scale=alt.Scale(zero=False)),
             tooltip=["Datetime:T", "AQI:Q"]
             )
-        ).to_dict()
+        ).properties(title=chart_title).to_dict()
     )
 
 
