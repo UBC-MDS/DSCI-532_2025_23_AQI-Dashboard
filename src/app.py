@@ -69,8 +69,10 @@ app.layout = html.Div([
     dbc.Row([
         dbc.Col(global_widgets, md=4),
         dbc.Col(line_chart),
-        dbc.Col(card_perc),
-        dbc.Col(card_aqi)
+        dbc.Col([
+            dbc.Row(card_perc),
+            dbc.Row(card_aqi)
+        ])
     ]),
     dbc.Row([
         dbc.Col("", md=4),
@@ -237,15 +239,18 @@ def update_geo_map(selected_cities):
      Input('date_range', 'start_date'),
      Input('date_range', 'end_date')]
 )
-def update_cards(pollutant, start_date, end_date, selected_cities):
+def update_cards(pollutant, selected_cities, start_date, end_date):
     # Ensure dates are converted properly
-    # start_date = pd.to_datetime(start_date)
-    # end_date = pd.to_datetime(end_date)
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+
+    if isinstance(selected_cities, str):
+        selected_cities = [selected_cities]
 
     city_filtered_df = df[df['City'].isin(selected_cities)]
     date_filtered_df = city_filtered_df[
-        city_filtered_df['Datetime'] >= start_date & city_filtered_df['Datetime'] <= end_date
-        ]
+        (city_filtered_df['Datetime'] >= start_date) & (city_filtered_df['Datetime'] <= end_date)
+    ]
     start_pollution = city_filtered_df[
         city_filtered_df['Datetime'] == start_date
         ][pollutant].mean()
@@ -253,11 +258,11 @@ def update_cards(pollutant, start_date, end_date, selected_cities):
         city_filtered_df['Datetime'] == end_date
         ][pollutant].mean()
     perc_change = (end_pollution-start_pollution) / start_pollution
-    most_freq = date_filtered_df["column_name"].mode("AQI_Bucket")[0]
+    most_freq = date_filtered_df["AQI_Bucket"].mode()[0]
     
     card_percentage = [
         dbc.CardHeader(f'% Change in {pollutant}'),
-        dbc.CardBody(f'{perc_change :.1f}')
+        dbc.CardBody(f'{perc_change * 100:.1f}%')
     ]
     card_aqi = [
         dbc.CardHeader("Most Frequent AQI Bucket"),
