@@ -14,9 +14,10 @@ server = app.server
 df = pd.read_csv('data/raw/city_day.csv', parse_dates=["Datetime"])
 df["Datetime"] = pd.to_datetime(df["Datetime"])
 
-# Load India map
-gdf = gpd.read_file(gpd.datasets.get_path('naturalearth_lowres'))
-india_map = gdf[gdf.name == "India"]
+# Load India map (New method to replace removed geopandas.datasets)
+url = "https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/110m/cultural/ne_110m_admin_0_countries.zip"
+india_map = gpd.read_file(url)
+india_map = india_map[india_map['ADMIN'] == "India"]
 
 # Manually defining city coordinates
 city_coords = {
