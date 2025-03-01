@@ -4,6 +4,7 @@ import dash_vega_components as dvc
 from datetime import date
 import pandas as pd
 import altair as alt
+import geopandas as gpd
 
 # Initiatlize the app
 app = Dash(__name__, external_stylesheets=[dbc.themes.SOLAR])
@@ -12,6 +13,21 @@ server = app.server
 # Import data
 df = pd.read_csv('data/raw/city_day.csv', parse_dates=["Datetime"])
 df["Datetime"] = pd.to_datetime(df["Datetime"])
+
+# Load India map
+india_map = gpd.read_file("data/map/ne_110m_admin_0_countries.shp")
+india_map = india_map[india_map['ADMIN'] == "India"]
+
+# Manually defining city coordinates
+city_coords = {
+    "Delhi": {"lat": 28.6139, "lon": 77.2090},
+    "Mumbai": {"lat": 19.0760, "lon": 72.8777},
+    "Chennai": {"lat": 13.0827, "lon": 80.2707},
+    "Kolkata": {"lat": 22.5726, "lon": 88.3639},
+    "Bangalore": {"lat": 12.9716, "lon": 77.5946}
+}
+
+city_df = pd.DataFrame([{"City": k, "Latitude": v["lat"], "Longitude": v["lon"]} for k, v in city_coords.items()])
 
 # Layout
 app.layout = html.Div([
@@ -35,6 +51,8 @@ app.layout = html.Div([
         ['Delhi', 'Mumbai', 'Chennai', 'Kolkata', 'Bangalore'], multi=True,
         placeholder='Select cities...', id='city'),
     dvc.Vega(id='line', spec={}),
+    html.Br(),
+    dvc.Vega(id='geo_map', spec={})  # Altair-based map visualization
 ])
 
 
@@ -94,6 +112,30 @@ def create_line_chart(col, city, start_date, end_date):
         ).properties(title=chart_title).to_dict()
     )
 
+
+# Geo map callback using Altair
+@callback(
+    Output('geo_map', 'spec'),
+    Input('city', 'value')
+)
+def update_geo_map(city):
+    india_chart = alt.Chart(india_map).mark_geoshape(
+        fill='lightgray', stroke='black'
+    ).encode(
+        tooltip=[alt.Tooltip('ADMIN:N', title='Region')]
+    )
+    
+    highlight_chart = alt.Chart(india_map[india_map['ADMIN'].isin(city)]).mark_geoshape(
+        fill='red', stroke='black'
+    ).encode(
+        tooltip=[alt.Tooltip('ADMIN:N', title='Selected City')]
+    )
+    
+    return (india_chart + highlight_chart).properties(
+        width=600,
+        height=400,
+        title="Selected Cities on India Map"
+    ).to_dict()
 
 # Run the app/dashboard
 if __name__ == '__main__':
