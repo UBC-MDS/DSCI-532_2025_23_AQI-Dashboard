@@ -29,19 +29,16 @@ The **India AQI Dashboard** aims to:
 
 This dashboard makes AQI data more accessible and engaging, ensuring that everyone can stay informed about air quality conditions in India.
 
-## 🤝 How can you get involved?
-We’d love to have you on board! 🚀
+## 🤝 How can you get involved? 
 
 - **Report issues & request features**: [Open an issue]
 - **Contribute code**: Read our [Contributing Guidelines](CONTRIBUTING.md) and submit a pull request.
-- **Join discussions**: Share insights and ideas in our [GitHub Discussions]
 - **Spread the word**: Share this project to help raise awareness about air pollution!
 
 ## 📞 Get in touch
 If you have any questions, you can:
 
-- Open an issue on
-- Join the discussion on
+- Open an issue on github issue page.
 
 ## 🏆 Thank You!
 Thank you for visiting the project! We hope you’ll join us in building a healthier future with better air quality awareness.
