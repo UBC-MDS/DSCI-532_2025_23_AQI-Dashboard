@@ -29,6 +29,8 @@ The **India AQI Dashboard** aims to:
 
 This dashboard makes AQI data more accessible and engaging, ensuring that everyone can stay informed about air quality conditions in India.
 
+We've created a short example on how our dashboard works: ![Demo](img/demo.gif)
+
 ## 🤝 How can you get involved? 
 
 - **Report issues & request features**: [Open an issue]
