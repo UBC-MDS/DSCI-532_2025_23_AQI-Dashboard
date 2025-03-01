@@ -14,6 +14,10 @@ server = app.server
 df = pd.read_csv('data/raw/city_day.csv', parse_dates=["Datetime"])
 df["Datetime"] = pd.to_datetime(df["Datetime"])
 
+# Pollutants List
+pollutants = ['PM2.5', 'PM10', 'NO', 'NO2', 'NOx', 'NH3', 'CO', 'SO2', 
+              'O3', 'Benzene', 'Toluene', 'Xylene', 'AQI']
+
 # Load India map
 india_map = gpd.read_file("data/map/ne_110m_admin_0_countries.shp")
 india_map = india_map[india_map['ADMIN'] == "India"]
@@ -26,37 +30,73 @@ city_coords = {
     "Kolkata": {"lat": 22.5726, "lon": 88.3639},
     "Bangalore": {"lat": 12.9716, "lon": 77.5946}
 }
-
 city_df = pd.DataFrame([{"City": k, "Latitude": v["lat"], "Longitude": v["lon"]} for k, v in city_coords.items()])
+
+# Chart Components
+title = [html.H1('AIR POLLUTANT AND AIR QUALITY IN INDIAN CITIES')]
+global_widgets = [
+    html.H5('Date'),
+    html.Div(
+        dcc.DatePickerRange(
+            id='date_range',
+            start_date=date(2015, 1, 1),
+            end_date=date(2024, 12, 24),
+            min_date_allowed=date(2015, 1, 1),
+            max_date_allowed=date(2024, 12, 24),
+            start_date_placeholder_text='MM/DD/YYYY',
+            end_date_placeholder_text='MM/DD/YYYY',
+            initial_visible_month=date(2024, 12, 31)
+        ),
+        style={'margin-bottom': '20px'}
+    ),
+    html.H5('Pollutant'),
+    dcc.Dropdown(pollutants, 'AQI', placeholder='Select pollutant...', id='col'),
+    html.Br(),
+    html.H5('Cities'),
+    dcc.Dropdown(['Delhi', 'Mumbai', 'Chennai', 'Kolkata', 'Bangalore'], 
+        ['Delhi', 'Mumbai', 'Chennai', 'Kolkata', 'Bangalore'], multi=True,
+        placeholder='Select cities...', id='city')
+]
+line_chart = dvc.Vega(id='line', spec={})
+corr_chart = dvc.Vega(id='correlation-graph', spec={})
+map_plot = dvc.Vega(id='geo_map', spec={})
+card_perc = dbc.Card(id='card-percentage')
+card_aqi = dbc.Card(id='card-aqi')
 
 # Layout
 app.layout = html.Div([
-    html.H1('AIR POLLUTANT AND AIR QUALITY IN INDIAN CITIES'),
-    dcc.DatePickerRange(
-        id='date_range',
-        start_date=date(2015, 1, 1),
-        end_date=date(2024, 12, 24),
-        min_date_allowed=date(2015, 1, 1),
-        max_date_allowed=date(2024, 12, 24),
-        start_date_placeholder_text='MM/DD/YYYY',
-        end_date_placeholder_text='MM/DD/YYYY',
-        initial_visible_month=date(2024, 12, 31)
-    ),
-    html.Br(),
-    dcc.Dropdown(['PM2.5', 'PM10', 'NO', 'NO2', 'NOx', 'NH3', 'CO', 'SO2', 'O3',
-                  'Benzene', 'Toluene', 'Xylene', 'AQI'], 'AQI',
-                  placeholder='Select pollutant...', id='col'),
-    html.Br(),
-    dcc.Dropdown(['Delhi', 'Mumbai', 'Chennai', 'Kolkata', 'Bangalore'], 
-        ['Delhi', 'Mumbai', 'Chennai', 'Kolkata', 'Bangalore'], multi=True,
-        placeholder='Select cities...', id='city'),
-    dvc.Vega(id='line', spec={}),
-    html.Br(),
-    dvc.Vega(id='geo_map', spec={})  # Altair-based map visualization
+    dbc.Row(dbc.Col(title)),
+    dbc.Row([
+        dbc.Col(global_widgets, md=4),
+        dbc.Col(line_chart),
+        dbc.Col([
+            dbc.Row(card_perc),
+            dbc.Row(card_aqi)
+        ])
+    ]),
+    dbc.Row([
+        dbc.Col("", md=4),
+        dbc.Col(corr_chart),
+        dbc.Col(map_plot)
+    ]),
+    dbc.Row([
+        html.P([
+                """This dashboard provides user-friendly visualizations to help
+               environmental researchers track air quality trends, including
+               AQI and other pollution metrics, from 2015 to 2024. For more
+               information or to get involved, visit our """,
+               html.A("Github repository.",
+                      href="https://github.com/UBC-MDS/DSCI-532_2025_23_AQI-Dashboard",
+                      target="_blank")
+            ]),
+        html.P("""Created by Sarah Eshafi, Jay Mangat, Zheng He, and Ci Xu. 
+               Last updated March 1, 2025""")
+    ])
 ])
 
 
 # Server side callbacks/reactivity
+# Line Chart
 @callback(
     Output('line', 'spec'),
     [Input('col', 'value'),
@@ -71,7 +111,7 @@ def create_line_chart(col, city, start_date, end_date):
         ]
 
     date_length = (pd.to_datetime(end_date) - pd.to_datetime(start_date)).days
-    if date_length < 14:
+    if date_length < 31:
         freq = "D"
     elif date_length < 400:
         freq = "W"
@@ -90,7 +130,7 @@ def create_line_chart(col, city, start_date, end_date):
 
     if col == "AQI":
         y_title = "AQI"
-        chart_title = "AQI Concentration Over Time"
+        chart_title = "AQI Over Time"
     else:
         y_title = col + " Concentration"
         chart_title = col + " Concentration Over Time"
@@ -109,34 +149,127 @@ def create_line_chart(col, city, start_date, end_date):
             y=alt.Y(col+":Q", title=y_title, scale=alt.Scale(zero=False)),
             tooltip=["Datetime:T", "AQI:Q"]
             )
-        ).properties(title=chart_title).to_dict()
+        ).properties(
+            title=chart_title,
+            height=170,
+            width=300
+        ).to_dict()
     )
 
+# Correlation Plot
+@app.callback(
+    Output('correlation-graph', 'spec'),
+    [Input('date_range', 'start_date'),
+     Input('date_range', 'end_date'),
+     Input('city', 'value')]
+)
+def update_correlation_plot(start_date, end_date, selected_cities):
+    # Filter Data
+    filtered_df = df[(df['Datetime'] >= start_date) & (df['Datetime'] <= end_date)]
+    
+    # Filter Cities
+    if isinstance(selected_cities, list):
+        filtered_df = filtered_df[filtered_df['City'].isin(selected_cities)]
+    
+    # Keep Only Pollutant & AQI Columns
+    filtered_df = filtered_df[pollutants].dropna()
 
-# Geo map callback using Altair
+    # Compute Correlation Matrix
+    correlation_matrix = filtered_df.corr()
+
+    # Extract AQI Correlation with Other Pollutants
+    aqi_correlations = correlation_matrix['AQI'].drop('AQI').reset_index()
+    aqi_correlations.columns = ['Pollutant', 'Correlation']
+
+    chart = (
+        alt.Chart(aqi_correlations)
+        .mark_bar()
+        .encode(
+            x=alt.X("Pollutant:N", title="Pollutant", sort="-y"), #, axis=alt.Axis(labelFontSize=14, titleFontSize=16, titleFontWeight='bold')
+            y=alt.Y("Correlation:Q", title="Correlation with AQI"), #, axis=alt.Axis(labelFontSize=14, titleFontSize=16, titleFontWeight='bold')
+            tooltip=["Pollutant", "Correlation"]
+        )
+        .properties(
+            title=alt.TitleParams("Correlation of Pollutants with AQI"), #, fontSize=20, fontWeight='bold'
+            width=300,
+            height=150
+        )
+        .configure_view(strokeWidth=0) 
+    )
+    return chart.to_dict()
+
+# Map of India
 @callback(
     Output('geo_map', 'spec'),
     Input('city', 'value')
 )
-def update_geo_map(city):
+def update_geo_map(selected_cities):
+    # Base map of India using the shapefile
     india_chart = alt.Chart(india_map).mark_geoshape(
         fill='lightgray', stroke='black'
     ).encode(
         tooltip=[alt.Tooltip('ADMIN:N', title='Region')]
+    ).project('mercator').properties(
+        width=260,
+        height=210
     )
     
-    highlight_chart = alt.Chart(india_map[india_map['ADMIN'].isin(city)]).mark_geoshape(
-        fill='red', stroke='black'
-    ).encode(
-        tooltip=[alt.Tooltip('ADMIN:N', title='Selected City')]
+    # Filter city_df based on selected cities
+    filtered_cities = city_df[city_df['City'].isin(selected_cities)]
+    
+    # Plot red dots for cities using their coordinates
+    city_points = alt.Chart(filtered_cities).mark_point(fill="blue", size=100).encode(
+        longitude=alt.Longitude('Longitude:Q'),
+        latitude=alt.Latitude('Latitude:Q'),
+        tooltip=[alt.Tooltip('City:N', title='City')]
+    ).project('mercator')
+    
+    final_chart = (india_chart + city_points).properties(
+        title="Selected Cities"
     )
     
-    return (india_chart + highlight_chart).properties(
-        width=600,
-        height=400,
-        title="Selected Cities on India Map"
-    ).to_dict()
+    return final_chart.to_dict()
+
+# Data cards
+@callback(
+    [Output('card-percentage', 'children'),
+     Output('card-aqi', 'children')],
+    [Input('col', 'value'),
+     Input('city', 'value'),
+     Input('date_range', 'start_date'),
+     Input('date_range', 'end_date')]
+)
+def update_cards(pollutant, selected_cities, start_date, end_date):
+    # Ensure dates are converted properly
+    start_date = pd.to_datetime(start_date)
+    end_date = pd.to_datetime(end_date)
+
+    if isinstance(selected_cities, str):
+        selected_cities = [selected_cities]
+
+    city_filtered_df = df[df['City'].isin(selected_cities)]
+    date_filtered_df = city_filtered_df[
+        (city_filtered_df['Datetime'] >= start_date) & (city_filtered_df['Datetime'] <= end_date)
+    ]
+    start_pollution = city_filtered_df[
+        city_filtered_df['Datetime'] == start_date
+        ][pollutant].mean()
+    end_pollution = city_filtered_df[
+        city_filtered_df['Datetime'] == end_date
+        ][pollutant].mean()
+    perc_change = (end_pollution-start_pollution) / start_pollution
+    most_freq = date_filtered_df["AQI_Bucket"].mode()[0]
+    
+    card_percentage = [
+        dbc.CardHeader(f'% Change in {pollutant}'),
+        dbc.CardBody(f'{perc_change * 100:.1f}%')
+    ]
+    card_aqi = [
+        dbc.CardHeader("Most Frequent AQI Bucket"),
+        dbc.CardBody(most_freq)
+    ]
+    return card_percentage, card_aqi
 
 # Run the app/dashboard
 if __name__ == '__main__':
-    app.run(debug=False)
+    app.run(debug=True)
