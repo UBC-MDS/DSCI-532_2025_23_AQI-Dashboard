@@ -14,9 +14,8 @@ server = app.server
 df = pd.read_csv('data/raw/city_day.csv', parse_dates=["Datetime"])
 df["Datetime"] = pd.to_datetime(df["Datetime"])
 
-# Load India map (New method to replace removed geopandas.datasets)
-url = "https://www.naturalearthdata.com/http//www.naturalearthdata.com/download/110m/cultural/ne_110m_admin_0_countries.zip"
-india_map = gpd.read_file(url)
+# Load India map
+india_map = gpd.read_file("data/map/ne_110m_admin_0_countries.shp")
 india_map = india_map[india_map['ADMIN'] == "India"]
 
 # Manually defining city coordinates
