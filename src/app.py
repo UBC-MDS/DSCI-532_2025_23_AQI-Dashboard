@@ -119,16 +119,19 @@ def create_line_chart(col, city, start_date, end_date):
     Input('city', 'value')
 )
 def update_geo_map(city):
-    city_data = city_df[city_df['City'].isin(city)]
-    india_chart = alt.Chart(india_map).mark_geoshape(fill='lightgray', stroke='black')
-    city_chart = alt.Chart(city_data).mark_circle(size=100).encode(
-        longitude='Longitude:Q',
-        latitude='Latitude:Q',
-        tooltip=['City:N'],
-        color=alt.value("red")
+    india_chart = alt.Chart(india_map).mark_geoshape(
+        fill='lightgray', stroke='black'
+    ).encode(
+        tooltip=[alt.Tooltip('ADMIN:N', title='Region')]
     )
     
-    return (india_chart + city_chart).properties(
+    highlight_chart = alt.Chart(india_map[india_map['ADMIN'].isin(city)]).mark_geoshape(
+        fill='red', stroke='black'
+    ).encode(
+        tooltip=[alt.Tooltip('ADMIN:N', title='Selected City')]
+    )
+    
+    return (india_chart + highlight_chart).properties(
         width=600,
         height=400,
         title="Selected Cities on India Map"
