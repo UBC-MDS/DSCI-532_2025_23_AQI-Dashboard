@@ -7,7 +7,7 @@ import altair as alt
 import geopandas as gpd
 
 # Initiatlize the app
-app = Dash(__name__, external_stylesheets=[dbc.themes.SOLAR])
+app = Dash(__name__, external_stylesheets=[dbc.themes.YETI])
 server = app.server
 
 # Import data
