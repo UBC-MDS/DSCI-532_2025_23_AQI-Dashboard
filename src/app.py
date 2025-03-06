@@ -41,6 +41,7 @@ sidebar_background_color = '#b38d24'
 
 line_chart = dvc.Vega(id='line', spec={})
 corr_chart = dvc.Vega(id='correlation-graph', spec={})
+stack_chart = dvc.Vega(id='stacked-graph', spec={})
 map_plot = dvc.Vega(id='geo_map', spec={})
 card_perc = dbc.Card(id='card-percentage',
                      style={"width": "11rem"}, className="border-0 bg-transparent text-center")
@@ -132,7 +133,7 @@ app.layout = html.Div([
         
         dbc.Row(corr_chart)
         ]),
-        dbc.Col()  #place holder for stacked bar chart
+        dbc.Col(stack_chart)  #place holder for stacked bar chart
     ])
 ])
 
@@ -200,8 +201,6 @@ def create_line_chart(col, city, start_date, end_date):
     )
 
 # Correlation Plot
-
-
 @app.callback(
     Output('correlation-graph', 'spec'),
     [Input('date_range', 'start_date'),
@@ -248,8 +247,6 @@ def update_correlation_plot(start_date, end_date, selected_cities):
     return chart.to_dict()
 
 # Map of India
-
-
 @callback(
     Output('geo_map', 'spec'),
     Input('city', 'value')
@@ -282,8 +279,6 @@ def update_geo_map(selected_cities):
     return final_chart.to_dict()
 
 # Data cards
-
-
 @callback(
     [Output('card-percentage', 'children'),
      Output('card-aqi', 'children')],
@@ -324,6 +319,41 @@ def update_cards(pollutant, selected_cities, start_date, end_date):
     ]
     return card_percentage, card_aqi
 
+# Stacked bar Plot
+@app.callback(
+    Output('stacked-graph', 'spec'),
+    [Input('date_range', 'start_date'),
+     Input('date_range', 'end_date'),
+     Input('city', 'value')]
+)
+def update_stacked_plot(start_date, end_date, selected_cities):
+    # Filter Data
+    filtered_df = df[(df['Datetime'] >= start_date)
+                     & (df['Datetime'] <= end_date)]
+
+    # Filter Cities
+    if isinstance(selected_cities, list):
+        filtered_df = filtered_df[filtered_df['City'].isin(selected_cities)]
+    
+    filtered_df = filtered_df.groupby(["City", "AQI_Bucket"]).size().reset_index(name="count")
+
+    chart = (
+        alt.Chart(filtered_df)
+        .mark_bar()
+        .encode(
+            x = 'City',
+            y = 'count:Q',
+            color = 'AQI_Bucket',
+            tooltip=['AQI_Bucket','count:Q']
+        )
+        .properties(
+            title=alt.TitleParams("AQI bucket frequency"),
+            width=300,
+            height=150
+        )
+        .configure_view(strokeWidth=0)
+    )
+    return chart.to_dict()
 
 # Run the app/dashboard
 if __name__ == '__main__':
