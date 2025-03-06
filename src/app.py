@@ -15,8 +15,8 @@ df = pd.read_csv('data/raw/city_day.csv', parse_dates=["Datetime"])
 df["Datetime"] = pd.to_datetime(df["Datetime"])
 
 # Pollutants List
-pollutants = ['PM2.5', 'PM10', 'NO', 'NO2', 'NOx', 'NH3', 'CO', 'SO2', 
-              'O3', 'Benzene', 'Toluene', 'Xylene', 'AQI']
+pollutants = ['AQI', 'PM2.5', 'PM10', 'NO', 'NO2', 'NOx', 'NH3', 'CO', 'SO2', 
+              'O3', 'Benzene', 'Toluene', 'Xylene']
 
 # Load India map
 india_map = gpd.read_file("data/map/ne_110m_admin_0_countries.shp")
@@ -33,7 +33,7 @@ city_coords = {
 city_df = pd.DataFrame([{"City": k, "Latitude": v["lat"], "Longitude": v["lon"]} for k, v in city_coords.items()])
 
 # Chart Components
-title = [html.H1('AIR POLLUTANT AND AIR QUALITY IN INDIAN CITIES')]
+title = [html.H1('POLLUTANT AND AIR QUALITY IN INDIAN CITIES')]
 global_widgets = [
     html.H5('Date'),
     html.Div(
