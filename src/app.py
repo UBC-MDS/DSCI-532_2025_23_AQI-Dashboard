@@ -35,30 +35,8 @@ city_df = pd.DataFrame([{"City": k, "Latitude": v["lat"],
 
 # Chart Components
 title = [html.H1('POLLUTANT AND AIR QUALITY IN INDIAN CITIES')]
-global_widgets = [
-    # html.H5('Date'),
-    # html.Div(
-    #     dcc.DatePickerRange(
-    #         id='date_range',
-    #         start_date=date(2015, 1, 1),
-    #         end_date=date(2024, 12, 24),
-    #         min_date_allowed=date(2015, 1, 1),
-    #         max_date_allowed=date(2024, 12, 24),
-    #         start_date_placeholder_text='MM/DD/YYYY',
-    #         end_date_placeholder_text='MM/DD/YYYY',
-    #         initial_visible_month=date(2024, 12, 31)
-    #     ),
-    #     style={'margin-bottom': '20px'}
-    # ),
-    # html.H5('Pollutant'),
-    # dcc.Dropdown(pollutants, 'AQI',
-    #              placeholder='Select pollutant...', id='col'),
-    # html.Br(),
-    # html.H5('Cities'),
-    # dcc.Dropdown(['Delhi', 'Mumbai', 'Chennai', 'Kolkata', 'Bangalore'],
-    #              ['Delhi', 'Mumbai', 'Chennai', 'Kolkata', 'Bangalore'], multi=True,
-    #              placeholder='Select cities...', id='city')
-]
+title_background_color = '#f2bf30'
+sidebar_background_color = '#b38d24'
 
 
 line_chart = dvc.Vega(id='line', spec={})
@@ -123,7 +101,7 @@ sidebar = dbc.Col(
     ],
     md=10,
     style={
-        'background-color': '#e6e6e6',
+        'background-color': sidebar_background_color,
         'padding': 15,  # Padding top,left,right,botoom
         'padding-bottom': 0,  # Remove bottom padding for footer
         'height': '90vh',  # vh = "viewport height" = 90% of the window height
@@ -134,20 +112,27 @@ sidebar = dbc.Col(
 
 # Layout
 app.layout = html.Div([
-    dbc.Row(dbc.Col(title)),
+    dbc.Row(
+        dbc.Col(
+            title
+        ),
+        style={
+            'backgroundColor': title_background_color,
+            'padding-top': '2vh', 
+            'padding-bottom': '2vh',
+            'min-height': '10vh', 
+        }
+    ),
     dbc.Row([
         dbc.Col(sidebar),
-        # dbc.Col(global_widgets, md=4),
         dbc.Col([
             dbc.Row([card_aqi,
                      card_perc]),
-            dbc.Row([line_chart])
-            ]),
-            dbc.Col(corr_chart)
-    # ]),
-    # dbc.Row([
-    #     dbc.Col("", md=4),
-    #     dbc.Col(corr_chart)
+            dbc.Row([line_chart]),
+        
+        dbc.Row(corr_chart)
+        ]),
+        dbc.Col()  #place holder for stacked bar chart
     ])
 ])
 
@@ -292,7 +277,7 @@ def update_geo_map(selected_cities):
 
     final_chart = (india_chart + city_points).properties(
         title="Select Cities"
-    ).configure(background='#AAAAAA')  # change this to match sidebar's color
+    ).configure(background=sidebar_background_color)
 
     return final_chart.to_dict()
 
