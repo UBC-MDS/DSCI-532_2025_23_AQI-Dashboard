@@ -60,19 +60,27 @@ global_widgets = [
 line_chart = dvc.Vega(id='line', spec={})
 corr_chart = dvc.Vega(id='correlation-graph', spec={})
 map_plot = dvc.Vega(id='geo_map', spec={})
-card_perc = dbc.Card(id='card-percentage')
-card_aqi = dbc.Card(id='card-aqi')
+card_perc = dbc.Card(id='card-percentage',style={"width": "11rem"})
+card_aqi = dbc.Card(id='card-aqi',style={"width": "11rem", "margin-right": "30px"})
 
 # Layout
 app.layout = html.Div([
     dbc.Row(dbc.Col(title)),
+    # dbc.Row([         # old layout
+    #     dbc.Col(global_widgets, md=4),
+    #     dbc.Col(line_chart),
+    #     dbc.Col([
+    #         dbc.Row(card_perc),
+    #         dbc.Row(card_aqi)
+    #     ])
+    # ]),
     dbc.Row([
         dbc.Col(global_widgets, md=4),
-        dbc.Col(line_chart),
         dbc.Col([
-            dbc.Row(card_perc),
-            dbc.Row(card_aqi)
-        ])
+            dbc.Row([card_aqi,
+                     card_perc]),
+            dbc.Row([line_chart]),
+        ])    
     ]),
     dbc.Row([
         dbc.Col("", md=4),
