@@ -60,8 +60,8 @@ global_widgets = [
 line_chart = dvc.Vega(id='line', spec={})
 corr_chart = dvc.Vega(id='correlation-graph', spec={})
 map_plot = dvc.Vega(id='geo_map', spec={})
-card_perc = dbc.Card(id='card-percentage',style={"width": "11rem"})
-card_aqi = dbc.Card(id='card-aqi',style={"width": "11rem", "margin-right": "30px"})
+card_perc = dbc.Card(id='card-percentage',style={"width": "11rem"}, className="border-0 bg-transparent text-center")
+card_aqi = dbc.Card(id='card-aqi',style={"width": "11rem", "margin-right": "30px"}, className="border-0 bg-transparent text-center")
 
 # Layout
 app.layout = html.Div([
@@ -138,7 +138,7 @@ def create_line_chart(col, city, start_date, end_date):
 
     if col == "AQI":
         y_title = "AQI"
-        chart_title = "AQI Over Time"
+        chart_title = "AQI Over Time (Black = average)"
     else:
         y_title = col + " Concentration"
         chart_title = col + " Concentration Over Time"
