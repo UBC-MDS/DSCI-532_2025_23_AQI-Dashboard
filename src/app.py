@@ -148,11 +148,39 @@ app.layout = html.Div([
      Input('date_range', 'end_date')]
 )
 def create_line_chart(col, city, start_date, end_date):
+    print("\n🔍 --- DEBUG INFO ---")
+    print("Selected Pollutant:", col)
+    print("Selected Cities:", city)
+    print("Date Range:", start_date, end_date)
+
+    if col is None:
+        print("⚠️ WARNING: No pollutant selected. Using default 'AQI'.")
+        col = "AQI"
+
+    print("Available DataFrame Columns:", df.columns.tolist())
+
+    if col not in df.columns:
+        print(f"ERROR: '{col}' column not found in DataFrame!")
+        return {}
+
     df_city_filter = df[df["City"].isin(city)]
     df_date_filtered = df_city_filter[
         (df_city_filter["Datetime"] >= start_date) & (
             df_city_filter["Datetime"] <= end_date)
     ]
+
+    print("Filtered DF (By City) Shape:", df_city_filter.shape)
+    print("Filtered DF (By Date) Shape:", df_date_filtered.shape)
+
+    print("Checking PM2.5 Data...")
+    if "PM2.5" in df_date_filtered.columns:
+        print(df_date_filtered[["PM2.5"]].dropna().head())
+    else:
+        print("ERROR: 'PM2.5' column not found in DataFrame!")
+
+    if df_date_filtered.empty:
+        print("⚠️ WARNING: No data available after filtering!")
+        return {}
 
     date_length = (pd.to_datetime(end_date) - pd.to_datetime(start_date)).days
     if date_length < 31:
@@ -172,33 +200,38 @@ def create_line_chart(col, city, start_date, end_date):
     ).mean(numeric_only=True).reset_index()
     df_line_chart_mean['City'] = "Average"
 
-    if col == "AQI":
-        y_title = "AQI"
-        chart_title = "AQI Over Time (Black = average)"
-    else:
-        y_title = col + " Concentration"
-        chart_title = col + " Concentration Over Time"
+    print("Grouped DF for Chart Preview:")
+    print(df_line_chart[[col, "City"]].dropna().head())
+
+    # Fix: Ensure `PM2.5` is correctly formatted for Altair
+    col_escaped = col.replace(".", "_")  # Replace '.' with '_'
+    df_line_chart = df_line_chart.rename(columns={col: col_escaped})  # Rename column
+    df_line_chart_mean = df_line_chart_mean.rename(columns={col: col_escaped})  # Rename column
+
+    y_column = alt.Y(f"{col_escaped}:Q", title=f"{col} Concentration", scale=alt.Scale(zero=False))
 
     return (
         (
             alt.Chart(df_line_chart).mark_line().encode(
                 x=alt.X("Datetime:T", title="Date"),
-                y=alt.Y(col+":Q", title=y_title, scale=alt.Scale(zero=False)),
+                y=y_column,
                 color=alt.Color("City:N", title="Legend"),
                 opacity=alt.value(0.5),
-                tooltip=["Datetime:T", "AQI:Q", "City:N"]
+                tooltip=["Datetime:T", f"{col_escaped}:Q", "City:N"]
             ) +
             alt.Chart(df_line_chart_mean).mark_line(color="black").encode(
                 x=alt.X("Datetime:T", title="Date"),
-                y=alt.Y(col+":Q", title=y_title, scale=alt.Scale(zero=False)),
-                tooltip=["Datetime:T", "AQI:Q"]
+                y=y_column,
+                tooltip=["Datetime:T", f"{col_escaped}:Q"]
             )
         ).properties(
-            title=chart_title,
+            title=f"{col} Over Time (Black = average)",
             height=170,
             width=300
         ).to_dict()
     )
+
+
 
 # Correlation Plot
 @app.callback(
