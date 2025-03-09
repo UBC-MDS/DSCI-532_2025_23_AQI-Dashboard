@@ -5,14 +5,13 @@ from datetime import date
 import pandas as pd
 import altair as alt
 import geopandas as gpd
-import os
 
 # Initiatlize the app
 app = Dash(__name__, external_stylesheets=[dbc.themes.YETI])
 server = app.server
 
 # Import data
-df = pd.read_csv('../data/raw/city_day.csv', parse_dates=["Datetime"])
+df = pd.read_csv('data/raw/city_day.csv', parse_dates=["Datetime"])
 df["Datetime"] = pd.to_datetime(df["Datetime"])
 
 # Pollutants List
@@ -20,9 +19,7 @@ pollutants = ['AQI', 'PM2.5', 'PM10', 'NO', 'NO2', 'NOx', 'NH3', 'CO', 'SO2',
               'O3', 'Benzene', 'Toluene', 'Xylene']
 
 # Load India map
-base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-shapefile_path = os.path.join(base_dir, "data/map/ne_110m_admin_0_countries.shp")
-india_map = gpd.read_file(shapefile_path)
+india_map = gpd.read_file("data/map/ne_110m_admin_0_countries.shp")
 india_map = india_map[india_map['ADMIN'] == "India"]
 
 # Manually defining city coordinates
