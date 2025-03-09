@@ -35,8 +35,8 @@ city_df = pd.DataFrame([{"City": k, "Latitude": v["lat"],
 
 # Chart Components
 title = [html.H1('POLLUTANT AND AIR QUALITY IN INDIAN CITIES')]
-title_background_color = '#f2bf30'
-sidebar_background_color = '#b38d24'
+title_background_color = '#4868ff'
+sidebar_background_color = '#d5d5d5'
 
 
 line_chart = dvc.Vega(id='line', spec={})
@@ -83,9 +83,8 @@ sidebar = dbc.Col(
         ),
         dbc.Row([
             html.P([
-                """This dashboard provides user-friendly visualizations to help
-                environmental researchers track air quality trends, including
-                AQI and other pollution metrics, from 2015 to 2024. For more
+                """This dashboard helps environmental researchers track air
+                quality trends in India from 2015 to 2024. For more
                 information or to get involved, visit our """,
                 html.A("Github repository.",
                        href="https://github.com/UBC-MDS/DSCI-532_2025_23_AQI-Dashboard",
@@ -127,13 +126,24 @@ app.layout = html.Div([
     dbc.Row([
         dbc.Col(sidebar),
         dbc.Col([
-            dbc.Row([card_aqi,
-                     card_perc]),
-            dbc.Row([line_chart]),
-        
-        dbc.Row(corr_chart)
+            dbc.Row([line_chart],
+                    style={
+                        'padding-top': '2vh', 
+                        'padding-bottom': '2vh',
+                        'min-height': '39vh'}
+                    ),
+            dbc.Row(corr_chart)
         ]),
-        dbc.Col(stack_chart)  #place holder for stacked bar chart
+        dbc.Col([
+            dbc.Row([card_aqi,
+                     card_perc],
+                     style={
+                        'padding-top': '8vh', 
+                        'padding-bottom': '4vh',
+                        'min-height': '39vh'
+                    }),
+                        dbc.Row(stack_chart)
+        ])
     ])
 ])
 
@@ -148,39 +158,12 @@ app.layout = html.Div([
      Input('date_range', 'end_date')]
 )
 def create_line_chart(col, city, start_date, end_date):
-    print("\n🔍 --- DEBUG INFO ---")
-    print("Selected Pollutant:", col)
-    print("Selected Cities:", city)
-    print("Date Range:", start_date, end_date)
-
-    if col is None:
-        print("⚠️ WARNING: No pollutant selected. Using default 'AQI'.")
-        col = "AQI"
-
-    print("Available DataFrame Columns:", df.columns.tolist())
-
-    if col not in df.columns:
-        print(f"ERROR: '{col}' column not found in DataFrame!")
-        return {}
 
     df_city_filter = df[df["City"].isin(city)]
     df_date_filtered = df_city_filter[
         (df_city_filter["Datetime"] >= start_date) & (
             df_city_filter["Datetime"] <= end_date)
     ]
-
-    print("Filtered DF (By City) Shape:", df_city_filter.shape)
-    print("Filtered DF (By Date) Shape:", df_date_filtered.shape)
-
-    print("Checking PM2.5 Data...")
-    if "PM2.5" in df_date_filtered.columns:
-        print(df_date_filtered[["PM2.5"]].dropna().head())
-    else:
-        print("ERROR: 'PM2.5' column not found in DataFrame!")
-
-    if df_date_filtered.empty:
-        print("⚠️ WARNING: No data available after filtering!")
-        return {}
 
     date_length = (pd.to_datetime(end_date) - pd.to_datetime(start_date)).days
     if date_length < 31:
@@ -200,15 +183,17 @@ def create_line_chart(col, city, start_date, end_date):
     ).mean(numeric_only=True).reset_index()
     df_line_chart_mean['City'] = "Average"
 
-    print("Grouped DF for Chart Preview:")
-    print(df_line_chart[[col, "City"]].dropna().head())
-
     # Fix: Ensure `PM2.5` is correctly formatted for Altair
     col_escaped = col.replace(".", "_")  # Replace '.' with '_'
     df_line_chart = df_line_chart.rename(columns={col: col_escaped})  # Rename column
     df_line_chart_mean = df_line_chart_mean.rename(columns={col: col_escaped})  # Rename column
 
-    y_column = alt.Y(f"{col_escaped}:Q", title=f"{col} Concentration", scale=alt.Scale(zero=False))
+    if col_escaped == "AQI":
+        y_column = alt.Y(f"{col_escaped}:Q", title=f"{col}",
+                         scale=alt.Scale(zero=False))
+    else:
+        y_column = alt.Y(f"{col_escaped}:Q", title=f"{col} Concentration",
+                         scale=alt.Scale(zero=False))
 
     return (
         (
@@ -230,8 +215,6 @@ def create_line_chart(col, city, start_date, end_date):
             width=300
         ).to_dict()
     )
-
-
 
 # Correlation Plot
 @app.callback(
