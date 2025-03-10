@@ -1,5 +1,5 @@
 ## components.py
---------------------------------------------------------------------------------
+
 from dash import html, dcc
 import dash_bootstrap_components as dbc
 import dash_vega_components as dvc

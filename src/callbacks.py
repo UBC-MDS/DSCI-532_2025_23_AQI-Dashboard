@@ -1,5 +1,5 @@
 ## callbacks.py
---------------------------------------------------------------------------------
+
 import pandas as pd
 import altair as alt
 from dash import callback, Output, Input
