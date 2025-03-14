@@ -69,8 +69,8 @@ def create_line_chart(col, city, start_date, end_date):
             )
         ).properties(
             title=f"{col} Over Time (Black = average)",
-            height=170,
-            width=300
+            height=200,
+            width=500
         ).to_dict()
     )
 
@@ -101,8 +101,8 @@ def update_correlation_plot(start_date, end_date, selected_cities):
         )
         .properties(
             title=alt.TitleParams("Correlation of Pollutants with AQI"),
-            width=300,
-            height=150
+            width=500,
+            height=200
         )
         .configure_view(strokeWidth=0)
     )
@@ -198,7 +198,7 @@ def update_stacked_plot(start_date, end_date, selected_cities):
         .properties(
             title=alt.TitleParams("AQI bucket frequency"),
             width=300,
-            height=150
+            height=650
         )
         .configure_view(strokeWidth=0)
     )
