@@ -77,7 +77,8 @@ sidebar = dbc.Col(
                         ['Delhi', 'Mumbai', 'Chennai', 'Kolkata', 'Bangalore'],
                         multi=True,
                         placeholder='Select cities...',
-                        id='city'
+                        id='city',
+                        clearable=False
                     ),
                     html.Br(),
                     dbc.Col(map_plot)
@@ -128,7 +129,7 @@ layout = html.Div([
         }
     ),
     dbc.Row([
-        dbc.Col(sidebar),
+        dbc.Col(sidebar, md=4),
         dbc.Col([
             html.Div([
                 dbc.Card(line_chart, style={"box-shadow": "none",
