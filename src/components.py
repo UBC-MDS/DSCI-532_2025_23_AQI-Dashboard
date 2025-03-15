@@ -13,7 +13,7 @@ sidebar_background_color = '#96bcff'
 line_chart = dvc.Vega(id='line', spec={})
 corr_chart = dvc.Vega(id='correlation-graph', spec={})
 stack_chart = dvc.Vega(id='stacked-graph', spec={})
-map_plot = dvc.Vega(id='geo_map', spec={})
+map_plot = dvc.Vega(id='geo_map', spec={}, signalsToObserve=['india'])
 card_perc = dbc.Card(id='card-percentage',
                      style={"width": "12rem",
                             "background": sidebar_background_color,
@@ -64,7 +64,8 @@ sidebar = dbc.Col(
                          'CO', 'SO2', 'O3', 'Benzene', 'Toluene', 'Xylene'],
                         'AQI',
                         placeholder='Select pollutant...',
-                        id='col'
+                        id='col',
+                        clearable=False
                     ),
                     html.Br(),
                     html.H5('Cities',
@@ -112,6 +113,7 @@ sidebar = dbc.Col(
 
 # Layout
 layout = html.Div([
+    dcc.Store(id='selected-cities', data=[]),
     dbc.Row(
         dbc.Col(
             title
@@ -121,7 +123,7 @@ layout = html.Div([
             'backgroundColor': title_background_color,
             'padding-top': '2vh',
             'padding-bottom': '2vh',
-            'padding-left': '5vh',
+            'padding-left': '3vh',
             'min-height': '10vh',
         }
     ),

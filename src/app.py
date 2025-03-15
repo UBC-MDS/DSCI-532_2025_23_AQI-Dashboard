@@ -15,6 +15,8 @@ server = app.server
 from .components import layout
 from . import callbacks
 
+clickData = {'datum': {'City': 'Mumbai'}}
+
 # Set the layout (replaces original app.layout = ...)
 app.layout = layout
 
