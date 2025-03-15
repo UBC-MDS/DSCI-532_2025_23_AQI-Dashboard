@@ -1,4 +1,4 @@
-## callbacks.py
+# callbacks.py
 
 import pandas as pd
 import altair as alt
@@ -10,6 +10,8 @@ from .data import df, pollutants, india_map, city_df
 from .components import sidebar_background_color
 
 # Line Chart
+
+
 @callback(
     Output('line', 'spec'),
     [Input('col', 'value'),
@@ -57,8 +59,13 @@ def create_line_chart(col, city, start_date, end_date):
             alt.Chart(df_line_chart).mark_line().encode(
                 x=alt.X("Datetime:T", title="Date"),
                 y=y_column,
-                color=alt.Color("City:N", title="Legend"),
-                opacity=alt.value(0.5),
+                color=alt.Color("City:N", legend=alt.Legend(
+                    title='',
+                    orient='none',
+                    legendX=20, legendY=10,
+                    direction='horizontal',
+                    titleAnchor='middle')),
+                opacity=alt.value(0.8),
                 tooltip=["Datetime:T", f"{col_escaped}:Q", "City:N"]
             )
             +
@@ -69,12 +76,14 @@ def create_line_chart(col, city, start_date, end_date):
             )
         ).properties(
             title=f"{col} Over Time (Black = average)",
-            height=170,
-            width=300
+            height=280,
+            width=515
         ).to_dict()
     )
 
 # Correlation Plot
+
+
 @callback(
     Output('correlation-graph', 'spec'),
     [Input('date_range', 'start_date'),
@@ -82,7 +91,8 @@ def create_line_chart(col, city, start_date, end_date):
      Input('city', 'value')]
 )
 def update_correlation_plot(start_date, end_date, selected_cities):
-    filtered_df = df[(df['Datetime'] >= start_date) & (df['Datetime'] <= end_date)]
+    filtered_df = df[(df['Datetime'] >= start_date)
+                     & (df['Datetime'] <= end_date)]
     if isinstance(selected_cities, list):
         filtered_df = filtered_df[filtered_df['City'].isin(selected_cities)]
     filtered_df = filtered_df[pollutants].dropna()
@@ -101,14 +111,16 @@ def update_correlation_plot(start_date, end_date, selected_cities):
         )
         .properties(
             title=alt.TitleParams("Correlation of Pollutants with AQI"),
-            width=300,
-            height=150
+            width=500,
+            height=280
         )
         .configure_view(strokeWidth=0)
     )
     return chart.to_dict()
 
 # Map of India
+
+
 @callback(
     Output('geo_map', 'spec'),
     Input('city', 'value')
@@ -137,6 +149,8 @@ def update_geo_map(selected_cities):
     return final_chart.to_dict()
 
 # Data cards
+
+
 @callback(
     [Output('card-percentage', 'children'),
      Output('card-aqi', 'children')],
@@ -157,13 +171,15 @@ def update_cards(pollutant, selected_cities, start_date, end_date):
         (city_filtered_df['Datetime'] >= start_date) & (
             city_filtered_df['Datetime'] <= end_date)
     ]
-    start_pollution = city_filtered_df[city_filtered_df['Datetime'] == start_date][pollutant].mean()
-    end_pollution = city_filtered_df[city_filtered_df['Datetime'] == end_date][pollutant].mean()
+    start_pollution = city_filtered_df[city_filtered_df['Datetime']
+                                       == start_date][pollutant].mean()
+    end_pollution = city_filtered_df[city_filtered_df['Datetime']
+                                     == end_date][pollutant].mean()
     perc_change = (end_pollution - start_pollution) / start_pollution
     most_freq = date_filtered_df["AQI_Bucket"].mode()[0]
 
     card_percentage = [
-        dbc.CardHeader(f'% Change in {pollutant}'),
+        dbc.CardHeader(f'Percent Change in {pollutant}'),
         dbc.CardBody(f'{perc_change * 100:.1f}%')
     ]
     card_aqi = [
@@ -173,6 +189,8 @@ def update_cards(pollutant, selected_cities, start_date, end_date):
     return card_percentage, card_aqi
 
 # Stacked bar Plot
+
+
 @callback(
     Output('stacked-graph', 'spec'),
     [Input('date_range', 'start_date'),
@@ -180,11 +198,13 @@ def update_cards(pollutant, selected_cities, start_date, end_date):
      Input('city', 'value')]
 )
 def update_stacked_plot(start_date, end_date, selected_cities):
-    filtered_df = df[(df['Datetime'] >= start_date) & (df['Datetime'] <= end_date)]
+    filtered_df = df[(df['Datetime'] >= start_date)
+                     & (df['Datetime'] <= end_date)]
     if isinstance(selected_cities, list):
         filtered_df = filtered_df[filtered_df['City'].isin(selected_cities)]
-    
-    filtered_df = filtered_df.groupby(["City", "AQI_Bucket"]).size().reset_index(name="count")
+
+    filtered_df = filtered_df.groupby(
+        ["City", "AQI_Bucket"]).size().reset_index(name="count")
 
     chart = (
         alt.Chart(filtered_df)
@@ -192,13 +212,18 @@ def update_stacked_plot(start_date, end_date, selected_cities):
         .encode(
             x='City',
             y='count:Q',
-            color='AQI_Bucket',
-            tooltip=['AQI_Bucket','count:Q']
+            color=alt.Color("AQI_Bucket:N", legend=alt.Legend(
+                title='',
+                orient='none',
+                legendX=20, legendY=10,
+                direction='horizontal',
+                titleAnchor='middle')),
+            tooltip=['AQI_Bucket', 'count:Q']
         )
         .properties(
             title=alt.TitleParams("AQI bucket frequency"),
-            width=300,
-            height=150
+            width=390,
+            height=525
         )
         .configure_view(strokeWidth=0)
     )
