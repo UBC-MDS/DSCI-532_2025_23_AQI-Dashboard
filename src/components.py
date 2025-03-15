@@ -8,26 +8,26 @@ from datetime import date
 # Chart Components
 title = [html.H1('POLLUTANT AND AIR QUALITY IN INDIAN CITIES')]
 title_background_color = '#003780'
-sidebar_background_color = '#0456c2'
+sidebar_background_color = '#96bcff'
 
 line_chart = dvc.Vega(id='line', spec={})
 corr_chart = dvc.Vega(id='correlation-graph', spec={})
 stack_chart = dvc.Vega(id='stacked-graph', spec={})
 map_plot = dvc.Vega(id='geo_map', spec={})
 card_perc = dbc.Card(id='card-percentage',
-                     style={"width": "16rem",
+                     style={"width": "12rem",
                             "background": sidebar_background_color,
-                            "height": '12vh',
-                            "color": "white"
+                            "height": '15vh',
+                            "color": "black"
                             },
                      className="border-0 text-center"
                      )
 card_aqi = dbc.Card(id='card-aqi',
-                    style={"width": "16rem",
+                    style={"width": "12rem",
                            "background-color": sidebar_background_color,
-                           "height": '12vh',
-                           "margin-right": "100px",
-                           "color": "white"
+                           "height": '15vh',
+                           "margin-right": "80px",
+                           "color": "black"
                            },
                     className="border-0 text-center"
                     )
@@ -39,7 +39,7 @@ sidebar = dbc.Col(
                 [
                     html.H5('Date',
                             style={
-                                "color": "white"
+                                "color": "black"
                             }
                             ),
                     html.Div(
@@ -57,7 +57,7 @@ sidebar = dbc.Col(
                     ),
                     html.H5('Pollutant',
                             style={
-                                "color": "white"
+                                "color": "black"
                             }),
                     dcc.Dropdown(
                         ['AQI', 'PM2.5', 'PM10', 'NO', 'NO2', 'NOx', 'NH3',
@@ -69,7 +69,7 @@ sidebar = dbc.Col(
                     html.Br(),
                     html.H5('Cities',
                             style={
-                                "color": "white"
+                                "color": "black"
                             }),
                     dcc.Dropdown(
                         ['Delhi', 'Mumbai', 'Chennai', 'Kolkata', 'Bangalore'],
@@ -93,7 +93,7 @@ sidebar = dbc.Col(
                        target="_blank")
             ]),
             html.P("""Created by Sarah Eshafi, Jay Mangat, Zheng He, and Ci Xu.
-                   Last updated March 1, 2025""")
+                   Last updated March 17, 2025""")
         ],
             style={
                 'margin-top': 'auto'
@@ -128,32 +128,23 @@ layout = html.Div([
     dbc.Row([
         dbc.Col(sidebar),
         dbc.Col([
+            html.Div([
+                dbc.Card(line_chart, style={"box-shadow": "none",
+                                            "border": "none",
+                                            "padding-top": "2vh"}),
+                dbc.Card(corr_chart, style={"box-shadow": "none",
+                                            "border": "none",
+                                            "padding-top": "2vh"})
+            ])
+        ]),
+        dbc.Col([
             dbc.Row(
                 [card_aqi,
                  card_perc],
-        style={
-            'padding-top': '2vh'
-            }
-        ),
-            html.Div([
-                dbc.Card(line_chart,style={"box-shadow": "none", 
-                                           "border": "none",
-                                           "padding-top":"2vh"}),
-                dbc.Card(corr_chart,style={"box-shadow": "none", 
-                                           "border": "none",
-                                           "padding-top":"2vh"})
-            ])
-            # dbc.Row(
-            #     (line_chart),
-            #     style={
-            #         'padding-top': '2vh',
-            #         # 'padding-bottom': '2vh',
-            #         'min-height': '39vh'},
-            #     className="mb-0"
-            # ),
-            # dbc.Row((corr_chart))
-        ]),
-        dbc.Col([
+                style={
+                    'padding-top': '2vh'
+                }
+            ),
             dbc.Row((stack_chart))
         ])
     ])
