@@ -13,7 +13,7 @@ sidebar_background_color = '#96bcff'
 line_chart = dvc.Vega(id='line', spec={})
 corr_chart = dvc.Vega(id='correlation-graph', spec={})
 stack_chart = dvc.Vega(id='stacked-graph', spec={})
-map_plot = dvc.Vega(id='geo_map', spec={}, signalsToObserve=['india'])
+map_plot = dvc.Vega(id='geo_map', spec={}, signalsToObserve=["select_region"])
 card_perc = dbc.Card(id='card-percentage',
                      style={"width": "12rem",
                             "background": sidebar_background_color,
@@ -26,11 +26,19 @@ card_aqi = dbc.Card(id='card-aqi',
                     style={"width": "12rem",
                            "background-color": sidebar_background_color,
                            "height": '15vh',
-                           "margin-right": "80px",
+                           "margin-right": "70px",
                            "color": "black"
                            },
                     className="border-0 text-center"
                     )
+city_dropdown = dcc.Dropdown(
+    ['Delhi', 'Mumbai', 'Chennai', 'Kolkata', 'Bangalore'],
+    ['Delhi', 'Mumbai', 'Chennai', 'Kolkata', 'Bangalore'],
+    multi=True,
+    placeholder='Select cities...',
+    id='city',
+    clearable=False
+    )
 
 sidebar = dbc.Col(
     [
@@ -68,9 +76,11 @@ sidebar = dbc.Col(
                         clearable=False
                     ),
                     html.Br(),
-                    html.H5('Cities',
+                    html.H5('Select Cities (hold shift + click)',
                             style={
-                                "color": "black"
+                                "color": "black",
+                                'padding-bottom': 0,
+                                'margin-bottom': 0
                             }),
                     dcc.Dropdown(
                         ['Delhi', 'Mumbai', 'Chennai', 'Kolkata', 'Bangalore'],
@@ -78,7 +88,14 @@ sidebar = dbc.Col(
                         multi=True,
                         placeholder='Select cities...',
                         id='city',
-                        clearable=False
+                        clearable=False,
+                        style={'display': 'none'}
+                    ),
+                    dcc.Dropdown(
+                        ['Delhi'],
+                        ['Delhi'],
+                        id='placeholder',
+                        style={'display': 'none'}
                     ),
                     html.Br(),
                     dbc.Col(map_plot)
@@ -95,10 +112,12 @@ sidebar = dbc.Col(
                        target="_blank")
             ]),
             html.P("""Created by Sarah Eshafi, Jay Mangat, Zheng He, and Ci Xu.
-                   Last updated March 17, 2025""")
+                   Last updated March 17, 2025
+                   """)
         ],
             style={
-                'margin-top': 'auto'
+                'margin-top': 'auto',
+                'padding-bottom': 10
         }
         )
     ],

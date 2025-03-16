@@ -51,10 +51,6 @@ def create_line_chart(col, city, start_date, end_date):
     else:
         y_column = alt.Y(f"{col_escaped}:Q", title=f"{col} Concentration",
                          scale=alt.Scale(zero=False))
-
-    # if df_line_chart.empty:S
-    #     return alt.Chart().mark_line()
-    # else:
     return (
         (
             alt.Chart(df_line_chart).mark_line().encode(
@@ -135,89 +131,55 @@ def update_correlation_plot(start_date, end_date, selected_cities):
 # Map of India
 @callback(
     Output('geo_map', 'spec'),
-    Input('city', 'value')
+    Input('placeholder', 'value')
+    # Input('city', 'value')
 )
 def update_geo_map(selected_cities):
-    select = alt.selection_point(fields=["City"])
+    select = alt.selection_point(fields=["City"], name="select_region")
     india_chart = alt.Chart(india_map).mark_geoshape(
         fill='lightgray', stroke='black'
-    ).encode(
-        tooltip=[alt.Tooltip('ADMIN:N', title='Region')]
-    ).project('mercator').properties(
-        width=260,
-        height=210
+    ).encode().project('mercator').properties(
+        width=400,
+        height=310
     )
 
-    filtered_cities = city_df[city_df['City'].isin(selected_cities)]
-    city_points = alt.Chart(filtered_cities).mark_point(fill="blue", size=100).encode(
+    city_points = alt.Chart(city_df).mark_point(fill="blue", size=100).encode(
         longitude=alt.Longitude('Longitude:Q'),
         latitude=alt.Latitude('Latitude:Q'),
         tooltip=[alt.Tooltip('City:N', title='City')]
     ).project('mercator').add_params(select)
 
     city_with_selection = city_points.encode(
-        opacity = alt.condition(select, alt.value(0.8), alt.value(0.2))
+        opacity=alt.condition(select, alt.value(0.8), alt.value(0.2))
     )
 
-    final_chart = (india_chart + city_with_selection).properties(
-        title="Select Cities"
-    ).configure(background=sidebar_background_color)
+    # Create a text layer for city labels
+    city_df_2 = city_df.copy()
+    city_df_2.loc[4, 'Longitude'] = 70
+    city_labels = alt.Chart(city_df_2).mark_text(
+        align='left', dx=7, dy=7, fontSize=14, color='black'
+    ).encode(
+        longitude=alt.Longitude('Longitude:Q'),
+        latitude=alt.Latitude('Latitude:Q'),
+        text=alt.Text('City:N')
+    ).project('mercator')
 
-    return final_chart.to_dict()
-# @callback(
-#     [Output('geo_map', 'spec'),
-#      Output('selected-cities', 'data')],
-#     Input('geo_map', 'clickData'),
-#     State('selected-cities', 'data')
-# )
-# def update_geo_map(clickData, selected_data):
-#     select = alt.selection_point(fields=["City"])
-#     # Create base map (using Altair)
-#     india_chart = alt.Chart(india_map).mark_geoshape(
-#         fill='lightgray', stroke='black'
-#     ).encode(
-#         tooltip=alt.Tooltip('ADMIN:N', title='Region')
-#     ).project('mercator').properties(
-#         width=260,
-#         height=210
-#     )
-#     # Layer 1: All cities in blue
-#     city_points = alt.Chart(city_df).mark_point(
-#         fill="blue", size=100
-#     ).encode(
-#         longitude=alt.Longitude('Longitude:Q'),
-#         latitude=alt.Latitude('Latitude:Q'),
-#         tooltip=alt.Tooltip('City:N', title='City')
-#     ).project('mercator').add_params(select)
-    
-#     # Initialize selected_data if None
-#     if selected_data is None:
-#         selected_data = []
-    
-#     # Process clickData to update the list of selected cities
-#     if clickData is not None:
-#         # Assume clickData structure: {'datum': {'City': 'CityA', ...}, ...}
-#         clicked_city = clickData.get('datum', {}).get('City')
-#         if clicked_city and (clicked_city not in selected_data):
-#             selected_data.append(clicked_city)
-    
-#     # Layer 2: Selected cities in red
-#     # Filter city_df for selected cities
-#     selected_df = city_df[city_df['City'].isin(selected_data)]
-#     selected_city_points = alt.Chart(selected_df).mark_point(
-#         fill="red", size=100
-#     ).encode(
-#         longitude=alt.Longitude('Longitude:Q'),
-#         latitude=alt.Latitude('Latitude:Q'),
-#         tooltip=alt.Tooltip('City:N', title='Selected City')
-#     ).project('mercator')
-    
-#     # Combine layers
-#     final_chart = (india_chart + city_points + selected_city_points).properties(
-#         title="Select Cities"
-#     ).configure(background=sidebar_background_color)
-    
-#     return final_chart.to_dict(), selected_data
+    final_chart = (india_chart + city_with_selection + city_labels).properties(
+    ).configure(background=sidebar_background_color)
+    return final_chart.interactive().to_dict(format="vega")
+
+# City filter
+@callback(
+    Output('city', 'value'),
+    Input('geo_map', 'signalData')
+)
+def update_city_filter(clicked_region):
+    print(clicked_region)
+    if clicked_region.get("select_region"):
+        value = clicked_region['select_region']['City']  # [city_df['City'][0]]
+    else:
+        value = city_df['City']
+    return value
 
 # Data cards
 @callback(
@@ -290,7 +252,7 @@ def update_stacked_plot(start_date, end_date, selected_cities):
         .mark_bar()
         .encode(
             x='City',
-            y='count:Q',
+            y=alt.Y('count:Q', title="Count"),
             color=alt.Color("AQI_Bucket:N", legend=alt.Legend(
                 title='',
                 orient='none',
@@ -300,9 +262,9 @@ def update_stacked_plot(start_date, end_date, selected_cities):
             tooltip=['AQI_Bucket', 'count:Q']
         )
         .properties(
-            title=alt.TitleParams("AQI bucket frequency"),
-            width=370,
-            height=525
+            title=alt.TitleParams("AQI Bucket Frequency"),
+            width=380,
+            height=500
         )
         .configure_view(strokeWidth=0)
     )
