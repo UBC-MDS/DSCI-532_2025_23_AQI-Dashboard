@@ -9,6 +9,7 @@ import geopandas as gpd
 
 # Initialize the app
 app = Dash(__name__, external_stylesheets=[dbc.themes.YETI])
+app.title = "Air Quality Dashboard"
 server = app.server
 
 # Import layout and callbacks after creating app
