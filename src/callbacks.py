@@ -258,7 +258,7 @@ def update_stacked_plot(start_date, end_date, selected_cities):
             y=alt.Y('count:Q', title="Count"),
             color=alt.Color("AQI_Bucket:N", legend=alt.Legend(
                 title='',
-                orient='none',
+                orient='top',
                 legendX=20, legendY=10,
                 direction='horizontal',
                 titleAnchor='middle')),
