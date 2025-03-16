@@ -166,7 +166,7 @@ def update_geo_map(selected_cities):
 
     final_chart = (india_chart + city_with_selection + city_labels).properties(
     ).configure(background=sidebar_background_color)
-    return final_chart.interactive().to_dict(format="vega")
+    return final_chart.interactive().to_dict()
 
 # City filter
 @callback(
@@ -174,9 +174,12 @@ def update_geo_map(selected_cities):
     Input('geo_map', 'signalData')
 )
 def update_city_filter(clicked_region):
-    print(clicked_region)
-    if clicked_region.get("select_region"):
-        value = clicked_region['select_region']['City']  # [city_df['City'][0]]
+    bool_check = clicked_region
+    if bool_check:
+        if clicked_region.get("select_region"):
+            value = clicked_region['select_region']['City']
+        else:
+            value = city_df['City']
     else:
         value = city_df['City']
     return value
