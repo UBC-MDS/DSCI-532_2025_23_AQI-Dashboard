@@ -2,7 +2,7 @@
 
 import pandas as pd
 import altair as alt
-from dash import callback, Output, Input
+from dash import callback, Output, Input, State
 import dash_bootstrap_components as dbc
 
 # Import data and style references
@@ -10,8 +10,6 @@ from .data import df, pollutants, india_map, city_df
 from .components import sidebar_background_color
 
 # Line Chart
-
-
 @callback(
     Output('line', 'spec'),
     [Input('col', 'value'),
@@ -53,7 +51,6 @@ def create_line_chart(col, city, start_date, end_date):
     else:
         y_column = alt.Y(f"{col_escaped}:Q", title=f"{col} Concentration",
                          scale=alt.Scale(zero=False))
-
     return (
         (
             alt.Chart(df_line_chart).mark_line().encode(
@@ -62,7 +59,7 @@ def create_line_chart(col, city, start_date, end_date):
                 color=alt.Color("City:N", legend=alt.Legend(
                     title='',
                     orient='none',
-                    legendX=20, legendY=10,
+                    legendX=80, legendY=10,
                     direction='horizontal',
                     titleAnchor='middle')),
                 opacity=alt.value(0.8),
@@ -72,18 +69,28 @@ def create_line_chart(col, city, start_date, end_date):
             alt.Chart(df_line_chart_mean).mark_line(color="black").encode(
                 x=alt.X("Datetime:T", title="Date"),
                 y=y_column,
+                color=alt.Color("City:N", 
+                                scale=alt.Scale(domain=["Average"],
+                                                range=['black']),
+                                legend=alt.Legend(
+                                    title='',
+                                    orient='none',
+                                    legendX=20, legendY=10,
+                                    direction='horizontal',
+                                    titleAnchor='middle')
+                                ),
                 tooltip=["Datetime:T", f"{col_escaped}:Q"]
             )
+        ).resolve_scale(
+            color='independent'
         ).properties(
-            title=f"{col} Over Time (Black = average)",
-            height=280,
+            title=f"{col} Over Time",
+            height=270,
             width=515
         ).to_dict()
     )
 
 # Correlation Plot
-
-
 @callback(
     Output('correlation-graph', 'spec'),
     [Input('date_range', 'start_date'),
@@ -97,60 +104,87 @@ def update_correlation_plot(start_date, end_date, selected_cities):
         filtered_df = filtered_df[filtered_df['City'].isin(selected_cities)]
     filtered_df = filtered_df[pollutants].dropna()
 
-    correlation_matrix = filtered_df.corr()
-    aqi_correlations = correlation_matrix['AQI'].drop('AQI').reset_index()
-    aqi_correlations.columns = ['Pollutant', 'Correlation']
+    if filtered_df.empty:
+        chart = alt.Chart().mark_bar()
+    else:
+        correlation_matrix = filtered_df.corr()
+        aqi_correlations = correlation_matrix['AQI'].drop('AQI').reset_index()
+        aqi_correlations.columns = ['Pollutant', 'Correlation']
 
-    chart = (
-        alt.Chart(aqi_correlations)
-        .mark_bar()
-        .encode(
-            x=alt.X("Pollutant:N", title="Pollutant", sort="-y"),
-            y=alt.Y("Correlation:Q", title="Correlation with AQI"),
-            tooltip=["Pollutant", "Correlation"]
+        chart = (
+            alt.Chart(aqi_correlations)
+            .mark_bar()
+            .encode(
+                x=alt.X("Pollutant:N", title="Pollutant", sort="-y"),
+                y=alt.Y("Correlation:Q", title="Correlation with AQI"),
+                tooltip=["Pollutant", "Correlation"]
+            )
+            .properties(
+                title=alt.TitleParams("Correlation of Pollutants with AQI"),
+                width=500,
+                height=270
+            )
+            .configure_view(strokeWidth=0)
         )
-        .properties(
-            title=alt.TitleParams("Correlation of Pollutants with AQI"),
-            width=500,
-            height=280
-        )
-        .configure_view(strokeWidth=0)
-    )
     return chart.to_dict()
 
 # Map of India
-
-
 @callback(
     Output('geo_map', 'spec'),
-    Input('city', 'value')
+    Input('placeholder', 'value')
+    # Input('city', 'value')
 )
 def update_geo_map(selected_cities):
+    select = alt.selection_point(fields=["City"], name="select_region")
     india_chart = alt.Chart(india_map).mark_geoshape(
         fill='lightgray', stroke='black'
-    ).encode(
-        tooltip=[alt.Tooltip('ADMIN:N', title='Region')]
-    ).project('mercator').properties(
-        width=260,
-        height=210
+    ).encode().project('mercator').properties(
+        width=400,
+        height=310
     )
 
-    filtered_cities = city_df[city_df['City'].isin(selected_cities)]
-    city_points = alt.Chart(filtered_cities).mark_point(fill="blue", size=100).encode(
+    city_points = alt.Chart(city_df).mark_point(fill="blue", size=100).encode(
         longitude=alt.Longitude('Longitude:Q'),
         latitude=alt.Latitude('Latitude:Q'),
         tooltip=[alt.Tooltip('City:N', title='City')]
+    ).project('mercator').add_params(select)
+
+    city_with_selection = city_points.encode(
+        opacity=alt.condition(select, alt.value(0.8), alt.value(0.2))
+    )
+
+    # Create a text layer for city labels
+    city_df_2 = city_df.copy()
+    city_df_2.loc[4, 'Longitude'] = 70
+    city_labels = alt.Chart(city_df_2).mark_text(
+        align='left', dx=7, dy=7, fontSize=14, color='black'
+    ).encode(
+        longitude=alt.Longitude('Longitude:Q'),
+        latitude=alt.Latitude('Latitude:Q'),
+        text=alt.Text('City:N')
     ).project('mercator')
 
-    final_chart = (india_chart + city_points).properties(
-        title="Select Cities"
+    final_chart = (india_chart + city_with_selection + city_labels).properties(
     ).configure(background=sidebar_background_color)
+    return final_chart.interactive().to_dict()
 
-    return final_chart.to_dict()
+# City filter
+@callback(
+    Output('city', 'value'),
+    Input('geo_map', 'signalData')
+)
+def update_city_filter(clicked_region):
+    bool_check = clicked_region
+    if bool_check:
+        if clicked_region.get("select_region"):
+            value = clicked_region['select_region']['City']
+        else:
+            value = city_df['City']
+    else:
+        value = city_df['City']
+    return value
 
 # Data cards
-
-
 @callback(
     [Output('card-percentage', 'children'),
      Output('card-aqi', 'children')],
@@ -171,26 +205,36 @@ def update_cards(pollutant, selected_cities, start_date, end_date):
         (city_filtered_df['Datetime'] >= start_date) & (
             city_filtered_df['Datetime'] <= end_date)
     ]
-    start_pollution = city_filtered_df[city_filtered_df['Datetime']
-                                       == start_date][pollutant].mean()
-    end_pollution = city_filtered_df[city_filtered_df['Datetime']
-                                     == end_date][pollutant].mean()
-    perc_change = (end_pollution - start_pollution) / start_pollution
-    most_freq = date_filtered_df["AQI_Bucket"].mode()[0]
 
-    card_percentage = [
-        dbc.CardHeader(f'Percent Change in {pollutant}'),
-        dbc.CardBody(f'{perc_change * 100:.1f}%')
-    ]
-    card_aqi = [
-        dbc.CardHeader("Most Frequent AQI Bucket"),
-        dbc.CardBody(most_freq)
-    ]
+    if city_filtered_df.empty:
+        card_percentage = [
+            dbc.CardHeader(""),
+            dbc.CardBody("No Data Available")
+        ]
+        card_aqi = [
+            dbc.CardHeader(""),
+            dbc.CardBody("No Data Available")
+        ]
+    else:
+        start_pollution = city_filtered_df[city_filtered_df['Datetime']
+                                        == start_date][pollutant].mean()
+        end_pollution = city_filtered_df[city_filtered_df['Datetime']
+                                        == end_date][pollutant].mean()
+        perc_change = (end_pollution - start_pollution) / start_pollution
+        perc_change = round(perc_change * 100, 1)
+        most_freq = date_filtered_df["AQI_Bucket"].mode()[0]
+
+        card_percentage = [
+            dbc.CardHeader(f'Percent Change in {pollutant}'),
+            dbc.CardBody(perc_change)
+        ]
+        card_aqi = [
+            dbc.CardHeader("Most Frequent AQI Bucket"),
+            dbc.CardBody(most_freq)
+        ]
     return card_percentage, card_aqi
 
 # Stacked bar Plot
-
-
 @callback(
     Output('stacked-graph', 'spec'),
     [Input('date_range', 'start_date'),
@@ -211,7 +255,7 @@ def update_stacked_plot(start_date, end_date, selected_cities):
         .mark_bar()
         .encode(
             x='City',
-            y='count:Q',
+            y=alt.Y('count:Q', title="Count"),
             color=alt.Color("AQI_Bucket:N", legend=alt.Legend(
                 title='',
                 orient='none',
@@ -221,9 +265,9 @@ def update_stacked_plot(start_date, end_date, selected_cities):
             tooltip=['AQI_Bucket', 'count:Q']
         )
         .properties(
-            title=alt.TitleParams("AQI bucket frequency"),
-            width=390,
-            height=525
+            title=alt.TitleParams("AQI Bucket Frequency"),
+            width=380,
+            height=500
         )
         .configure_view(strokeWidth=0)
     )
