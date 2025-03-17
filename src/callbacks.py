@@ -143,6 +143,47 @@ def update_correlation_plot(start_date, end_date, selected_cities):
         )
     return chart.to_dict()
 
+# =============== India map ======================
+
+@callback(
+    Output('geo_map', 'spec'),
+    Input('placeholder', 'value')
+    # Input('city', 'value')
+)
+def update_geo_map(selected_cities):
+    select = alt.selection_point(fields=["City"], name="select_region")
+    india_chart = alt.Chart(india_map).mark_geoshape(
+        fill='lightgray', stroke='black'
+    ).encode().project('mercator').properties(
+        width=400,
+        height=310
+    )
+
+    city_points = alt.Chart(city_df).mark_point(fill="blue", size=100).encode(
+        longitude=alt.Longitude('Longitude:Q'),
+        latitude=alt.Latitude('Latitude:Q'),
+        tooltip=[alt.Tooltip('City:N', title='City')]
+    ).project('mercator').add_params(select)
+
+    city_with_selection = city_points.encode(
+        opacity=alt.condition(select, alt.value(0.8), alt.value(0.2))
+    )
+
+    # Create a text layer for city labels
+    city_df_2 = city_df.copy()
+    city_df_2.loc[4, 'Longitude'] = 70
+    city_labels = alt.Chart(city_df_2).mark_text(
+        align='left', dx=7, dy=7, fontSize=14, color='black'
+    ).encode(
+        longitude=alt.Longitude('Longitude:Q'),
+        latitude=alt.Latitude('Latitude:Q'),
+        text=alt.Text('City:N')
+    ).project('mercator')
+
+    final_chart = (india_chart + city_with_selection + city_labels).properties(
+    ).configure(background=sidebar_background_color)
+    return final_chart.interactive().to_dict()
+
 # =============== Stacked Bar Plot ===============
 @callback(
     Output('stacked-graph', 'spec'),

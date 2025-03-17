@@ -1,20 +1,24 @@
-# src/app.py
-
-from dash import Dash
+# app.py
+from dash import Dash, html, dcc, callback, Output, Input
 import dash_bootstrap_components as dbc
+import dash_vega_components as dvc
+from datetime import date
+import pandas as pd
+import altair as alt
+import geopandas as gpd
 
 # Initialize the app
 app = Dash(__name__, external_stylesheets=[dbc.themes.YETI])
 app.title = "Air Quality Dashboard"
-server = app.server  # Required for deployment on Render
+server = app.server
 
-# Import layout and callbacks AFTER initializing the app
-from src.components import layout
-import src.callbacks  # Ensure callbacks are loaded
+# Import layout and callbacks after creating app
+from .components import layout
+from . import callbacks
 
-# Set the layout
+# Set the layout (replaces original app.layout = ...)
 app.layout = layout
 
-# Run the app
+# Run the app/dashboard
 if __name__ == '__main__':
     app.run(debug=True)
