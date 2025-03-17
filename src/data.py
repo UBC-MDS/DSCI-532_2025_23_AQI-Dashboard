@@ -19,11 +19,8 @@ else:
 pollutants = ['AQI', 'PM2.5', 'PM10', 'NO', 'NO2', 'NOx', 'NH3', 'CO', 'SO2', 'O3', 'Benzene', 'Toluene', 'Xylene']
 
 # Load India map
-if os.path.exists(MAP_PATH):
-    india_map = gpd.read_file(MAP_PATH)
-    india_map = india_map[india_map['ADMIN'] == "India"]
-else:
-    india_map = None  # Handle missing file gracefully
+india_map = gpd.read_file("data/map/ne_110m_admin_0_countries.shp")
+india_map = india_map[india_map['ADMIN'] == "India"]
 
 # Manually defining city coordinates
 city_coords = {
@@ -33,8 +30,5 @@ city_coords = {
     "Kolkata": {"lat": 22.5726, "lon": 88.3639},
     "Bangalore": {"lat": 12.9716, "lon": 77.5946}
 }
-
-city_df = pd.DataFrame([
-    {"City": city, "Latitude": coords["lat"], "Longitude": coords["lon"]}
-    for city, coords in city_coords.items()
-])
+city_df = pd.DataFrame([{"City": k, "Latitude": v["lat"],
+                       "Longitude": v["lon"]} for k, v in city_coords.items()])
