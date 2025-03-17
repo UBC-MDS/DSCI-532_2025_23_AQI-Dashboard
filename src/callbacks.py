@@ -1,15 +1,30 @@
-# callbacks.py
+# src/callbacks.py
 
 import pandas as pd
 import altair as alt
-from dash import callback, Output, Input, State
+from dash import callback, Output, Input
 import dash_bootstrap_components as dbc
+from functools import lru_cache
 
 # Import data and style references
 from .data import df, pollutants, india_map, city_df
 from .components import sidebar_background_color
 
-# Line Chart
+
+@lru_cache(maxsize=32)
+def get_filtered_data(cities_tuple, start_date_str, end_date_str):
+    """Caches filtered data to improve performance."""
+    start_date = pd.to_datetime(start_date_str)
+    end_date = pd.to_datetime(end_date_str)
+    
+    mask = (
+        df["City"].isin(cities_tuple) &
+        (df["Datetime"] >= start_date) &
+        (df["Datetime"] <= end_date)
+    )
+    return df.loc[mask].copy()
+
+# =============== Line Chart ===============
 @callback(
     Output('line', 'spec'),
     [Input('col', 'value'),
@@ -90,7 +105,7 @@ def create_line_chart(col, city, start_date, end_date):
         ).to_dict()
     )
 
-# Correlation Plot
+# =============== Correlation Plot ===============
 @callback(
     Output('correlation-graph', 'spec'),
     [Input('date_range', 'start_date'),
@@ -128,7 +143,8 @@ def update_correlation_plot(start_date, end_date, selected_cities):
         )
     return chart.to_dict()
 
-# Map of India
+# =============== India map ======================
+
 @callback(
     Output('geo_map', 'spec'),
     Input('placeholder', 'value')
@@ -168,23 +184,46 @@ def update_geo_map(selected_cities):
     ).configure(background=sidebar_background_color)
     return final_chart.interactive().to_dict()
 
-# City filter
+# =============== Stacked Bar Plot ===============
 @callback(
-    Output('city', 'value'),
-    Input('geo_map', 'signalData')
+    Output('stacked-graph', 'spec'),
+    [Input('date_range', 'start_date'),
+     Input('date_range', 'end_date'),
+     Input('city', 'value')]
 )
-def update_city_filter(clicked_region):
-    bool_check = clicked_region
-    if bool_check:
-        if clicked_region.get("select_region"):
-            value = clicked_region['select_region']['City']
-        else:
-            value = city_df['City']
-    else:
-        value = city_df['City']
-    return value
+def update_stacked_plot(start_date, end_date, selected_cities):
+    filtered_df = df[(df['Datetime'] >= start_date)
+                     & (df['Datetime'] <= end_date)]
+    if isinstance(selected_cities, list):
+        filtered_df = filtered_df[filtered_df['City'].isin(selected_cities)]
 
-# Data cards
+    filtered_df = filtered_df.groupby(
+        ["City", "AQI_Bucket"]).size().reset_index(name="count")
+
+    chart = (
+        alt.Chart(filtered_df)
+        .mark_bar()
+        .encode(
+            x='City',
+            y=alt.Y('count:Q', title="Count"),
+            color=alt.Color("AQI_Bucket:N", legend=alt.Legend(
+                title='',
+                orient='top',
+                legendX=20, legendY=10,
+                direction='horizontal',
+                titleAnchor='middle')),
+            tooltip=['AQI_Bucket', 'count:Q']
+        )
+        .properties(
+            title=alt.TitleParams("AQI Bucket Frequency"),
+            width=380,
+            height=500
+        )
+        .configure_view(strokeWidth=0)
+    )
+    return chart.to_dict()
+
+# =============== Cards for Percentage Change & AQI Bucket ===============
 @callback(
     [Output('card-percentage', 'children'),
      Output('card-aqi', 'children')],
@@ -234,41 +273,18 @@ def update_cards(pollutant, selected_cities, start_date, end_date):
         ]
     return card_percentage, card_aqi
 
-# Stacked bar Plot
+# =============== City Filter Update Based on Map Click ===============
 @callback(
-    Output('stacked-graph', 'spec'),
-    [Input('date_range', 'start_date'),
-     Input('date_range', 'end_date'),
-     Input('city', 'value')]
+    Output('city', 'value'),
+    Input('geo_map', 'signalData')
 )
-def update_stacked_plot(start_date, end_date, selected_cities):
-    filtered_df = df[(df['Datetime'] >= start_date)
-                     & (df['Datetime'] <= end_date)]
-    if isinstance(selected_cities, list):
-        filtered_df = filtered_df[filtered_df['City'].isin(selected_cities)]
-
-    filtered_df = filtered_df.groupby(
-        ["City", "AQI_Bucket"]).size().reset_index(name="count")
-
-    chart = (
-        alt.Chart(filtered_df)
-        .mark_bar()
-        .encode(
-            x='City',
-            y=alt.Y('count:Q', title="Count"),
-            color=alt.Color("AQI_Bucket:N", legend=alt.Legend(
-                title='',
-                orient='top',
-                legendX=20, legendY=10,
-                direction='horizontal',
-                titleAnchor='middle')),
-            tooltip=['AQI_Bucket', 'count:Q']
-        )
-        .properties(
-            title=alt.TitleParams("AQI Bucket Frequency"),
-            width=380,
-            height=500
-        )
-        .configure_view(strokeWidth=0)
-    )
-    return chart.to_dict()
+def update_city_filter(clicked_region):
+    bool_check = clicked_region
+    if bool_check:
+        if clicked_region.get("select_region"):
+            value = clicked_region['select_region']['City']
+        else:
+            value = city_df['City']
+    else:
+        value = city_df['City']
+    return value

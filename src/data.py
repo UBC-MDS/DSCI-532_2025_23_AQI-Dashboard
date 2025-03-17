@@ -1,16 +1,22 @@
-## data.py
-
+# src/data.py
+import os
 import pandas as pd
 import geopandas as gpd
-from datetime import date
 
-# Import data
-df = pd.read_csv('data/raw/city_day.csv', parse_dates=["Datetime"])
-df["Datetime"] = pd.to_datetime(df["Datetime"])
+RAW_CSV_PATH = "data/raw/city_day.csv"
+PROCESSED_PARQUET_PATH = "data/processed/city_day.parquet"
+MAP_PATH = "data/map/ne_110m_admin_0_countries.shp"
 
-# Pollutants List
-pollutants = ['AQI', 'PM2.5', 'PM10', 'NO', 'NO2', 'NOx', 'NH3', 'CO', 'SO2',
-              'O3', 'Benzene', 'Toluene', 'Xylene']
+# Load data from Parquet if available (faster), otherwise from CSV
+if os.path.exists(PROCESSED_PARQUET_PATH):
+    df = pd.read_parquet(PROCESSED_PARQUET_PATH)
+else:
+    df = pd.read_csv(RAW_CSV_PATH, parse_dates=["Datetime"])
+    os.makedirs(os.path.dirname(PROCESSED_PARQUET_PATH), exist_ok=True)  # Ensure folder exists
+    df.to_parquet(PROCESSED_PARQUET_PATH, index=False)  # Convert to Parquet for future use
+
+# Define pollutants list
+pollutants = ['AQI', 'PM2.5', 'PM10', 'NO', 'NO2', 'NOx', 'NH3', 'CO', 'SO2', 'O3', 'Benzene', 'Toluene', 'Xylene']
 
 # Load India map
 india_map = gpd.read_file("data/map/ne_110m_admin_0_countries.shp")
