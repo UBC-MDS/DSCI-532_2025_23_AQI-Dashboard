@@ -76,7 +76,7 @@ sidebar = dbc.Col(
                         clearable=False
                     ),
                     html.Br(),
-                    html.H5('Select Cities (hold shift + click)',
+                    html.H5('Select Cities (hold shift + click to apply multiple selection)',
                             style={
                                 "color": "black",
                                 'padding-bottom': 0,
